@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService } from '../../../core/services/auth.service';
+import { UserUseCase } from '../../../application/use-cases/user.usecase';
 
 @Component({
   selector: 'app-register',
@@ -231,7 +231,7 @@ export class RegisterComponent {
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService,
+    private userUseCase: UserUseCase,
     private router: Router
   ) {
     this.registerForm = this.fb.group({
@@ -260,7 +260,7 @@ export class RegisterComponent {
       
       const { email, password } = this.registerForm.value;
       
-      this.authService.register(email, password).subscribe({
+      this.userUseCase.register({ email, password, name: email }).subscribe({
         next: (response) => {
           this.loading = false;
           this.successMessage = 'Cuenta creada exitosamente. Redirigiendo al login...';

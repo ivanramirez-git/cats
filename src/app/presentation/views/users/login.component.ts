@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService } from '../../../core/services/auth.service';
+import { UserUseCase } from '../../../application/use-cases/user.usecase';
 
 @Component({
   selector: 'app-login',
@@ -187,7 +187,7 @@ export class LoginComponent {
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService,
+    private userUseCase: UserUseCase,
     private router: Router
   ) {
     this.loginForm = this.fb.group({
@@ -203,10 +203,10 @@ export class LoginComponent {
       
       const { email, password } = this.loginForm.value;
       
-      this.authService.login(email, password).subscribe({
+      this.userUseCase.login({ email, password }).subscribe({
         next: (response) => {
           this.loading = false;
-          // El AuthService ya maneja la redirección y el almacenamiento
+          // El UserUseCase ya maneja el almacenamiento en AuthStore
           this.router.navigate(['/breeds']);
         },
         error: (error) => {
