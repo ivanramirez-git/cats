@@ -1,53 +1,102 @@
-# Frontend
+# Cat Breeds Frontend - Angular# Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
 
-## Development server
 
-To start a local development server, run:
+Frontend desarrollado en Angular 20 con Material Design para explorar razas de gatos.This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.3.
 
-```bash
+
+
+## 🌐 Demo en Producción## Development server
+
+
+
+**🔗 [https://cats.freeloz.com](https://cats.freeloz.com)**To start a local development server, run:
+
+
+
+## ⚡ Características```bash
+
 ng serve
-```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- ✅ Autenticación JWT con guards```
 
-## Code scaffolding
+- ✅ Búsqueda en tiempo real
+
+- ✅ Galería de imágenes interactivaOnce the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+- ✅ Vista tabla con filtros
+
+- ✅ Responsive design## Code scaffolding
+
+- ✅ Clean Architecture (SOLID)
 
 Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## 🛠️ Tecnologías
 
 ```bash
-ng generate --help
+
+- Angular 20ng generate component component-name
+
+- Angular Material```
+
+- TypeScript
+
+- RxJSFor a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+
+- Docker + Nginx
+
+```bash
+
+## 🚀 Desarrollo Localng generate --help
+
 ```
 
-## Building
+```bash
+
+# Instalar dependencias## Building
+
+npm install
 
 To build the project run:
 
-```bash
+# Servidor de desarrollo
+
+ng serve```bash
+
 ng build
-```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+# Build de producción```
 
-## Running unit tests
+ng build --configuration=production
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+```This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
-```bash
+
+
+## 🐳 Docker## Running unit tests
+
+
+
+```bashTo execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+# Build imagen
+
+docker build -t cats-frontend .```bash
+
 ng test
-```
 
-## Running end-to-end tests
+# Ejecutar contenedor```
 
-For end-to-end (e2e) testing, run:
+docker run -p 4200:80 cats-frontend
 
+```## Running end-to-end tests
+
+
+
+---For end-to-end (e2e) testing, run:
+
+*Frontend - XpertGroup Prueba Técnica*
 ```bash
 ng e2e
 ```
