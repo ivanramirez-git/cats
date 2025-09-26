@@ -3,6 +3,12 @@
 # Etapa 1: Build de la aplicación
 FROM node:20-alpine AS build
 
+# Variables de entorno como argumentos
+ARG NODE_ENV=production
+ARG BACKEND_URL=https://cats-api.freeloz.com/api
+ENV NODE_ENV=${NODE_ENV}
+ENV BACKEND_URL=${BACKEND_URL}
+
 WORKDIR /app
 
 # Copiar archivos de dependencias
