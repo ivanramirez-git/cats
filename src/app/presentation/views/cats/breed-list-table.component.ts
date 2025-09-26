@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -33,6 +33,7 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
       <mat-card class="search-card">
         <mat-card-header>
           <mat-card-title>Filtro de Búsqueda</mat-card-title>
+          <mat-card-subtitle>Ingresa un término para buscar razas específicas</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
           <div class="search-form">
@@ -42,17 +43,20 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
                 matInput 
                 [(ngModel)]="searchTerm" 
                 (keyup.enter)="searchBreeds()"
-                placeholder="Ingresa texto para buscar...">
-              <i class="material-icons" matSuffix>search</i>
+                placeholder="Ej: Persian, Egypt, Active..."
+                [disabled]="loading">
+              <mat-icon matSuffix>search</mat-icon>
             </mat-form-field>
             <button 
               mat-raised-button 
               color="primary" 
               (click)="searchBreeds()"
-              [disabled]="loading"
+              [disabled]="loading || !searchTerm.trim()"
               class="search-button">
-              <i class="material-icons">search</i>
-              Buscar
+              <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+              <mat-icon *ngIf="!loading">search</mat-icon>
+              <span *ngIf="!loading">Buscar</span>
+              <span *ngIf="loading">Buscando...</span>
             </button>
             <button 
               mat-button 
@@ -60,31 +64,55 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
               (click)="clearSearch()"
               [disabled]="loading"
               class="clear-button">
-              <i class="material-icons">clear</i>
+              <mat-icon>clear</mat-icon>
               Limpiar
             </button>
           </div>
         </mat-card-content>
       </mat-card>
 
-      <div *ngIf="loading" class="loading-container">
-        <mat-spinner></mat-spinner>
-        <p>Buscando razas...</p>
+      <!-- Estado inicial: sin búsquedas -->
+      <div *ngIf="!searchPerformed && !loading" class="no-search-state">
+        <mat-card class="info-card">
+          <mat-card-content>
+            <div class="info-content">
+              <mat-icon class="large-icon">search</mat-icon>
+              <h2>Busca razas de gatos</h2>
+              <p>Ingresa un término de búsqueda para encontrar razas específicas.</p>
+              <p class="tip">💡 Puedes buscar por nombre (ej: "Persian"), origen (ej: "Egypt") o temperamento (ej: "Active")</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
       </div>
 
-      <div *ngIf="filteredBreeds.length > 0" class="results-container">
+      <!-- Loading state -->
+      <div *ngIf="loading" class="loading-container">
+        <mat-card>
+          <mat-card-content>
+            <div class="loading-content">
+              <mat-spinner></mat-spinner>
+              <p>Buscando razas en el servidor...</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+
+      <!-- Resultados encontrados -->
+      <div *ngIf="searchPerformed && !loading && searchResults.length > 0" class="results-container">
         <mat-card>
           <mat-card-header>
             <mat-card-title>
-              Resultados de Búsqueda 
-              <span class="results-count">({{filteredBreeds.length}} encontradas)</span>
+              Resultados de Búsqueda: "{{lastSearchTerm}}"
+              <span class="results-count">({{searchResults.length}} encontradas)</span>
             </mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <table mat-table [dataSource]="filteredBreeds" class="breeds-table">
+            <table mat-table [dataSource]="searchResults" class="breeds-table">
               <ng-container matColumnDef="name">
                 <th mat-header-cell *matHeaderCellDef>Nombre</th>
-                <td mat-cell *matCellDef="let breed">{{breed.name}}</td>
+                <td mat-cell *matCellDef="let breed">
+                  <strong>{{breed.name}}</strong>
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="origin">
@@ -94,7 +122,9 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
 
               <ng-container matColumnDef="temperament">
                 <th mat-header-cell *matHeaderCellDef>Temperamento</th>
-                <td mat-cell *matCellDef="let breed">{{breed.temperament}}</td>
+                <td mat-cell *matCellDef="let breed" class="temperament-cell">
+                  {{breed.temperament}}
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="life_span">
@@ -104,13 +134,15 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
 
               <ng-container matColumnDef="weight">
                 <th mat-header-cell *matHeaderCellDef>Peso</th>
-                <td mat-cell *matCellDef="let breed">{{breed.weight?.metric || 'N/A'}} kg</td>
+                <td mat-cell *matCellDef="let breed">
+                  {{breed.weight?.metric || 'N/A'}} kg
+                </td>
               </ng-container>
 
               <ng-container matColumnDef="description">
                 <th mat-header-cell *matHeaderCellDef>Descripción</th>
-                <td mat-cell *matCellDef="let breed">
-                  {{breed.description | slice:0:100}}{{breed.description.length > 100 ? '...' : ''}}
+                <td mat-cell *matCellDef="let breed" class="description-cell">
+                  {{breed.description | slice:0:100}}{{breed.description?.length > 100 ? '...' : ''}}
                 </td>
               </ng-container>
 
@@ -120,6 +152,7 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
                   <button 
                     mat-raised-button 
                     color="primary" 
+                    size="small"
                     (click)="viewBreed(breed)"
                     class="action-button">
                     <mat-icon>visibility</mat-icon>
@@ -135,42 +168,54 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
         </mat-card>
       </div>
 
-      <div *ngIf="!loading && searchPerformed && filteredBreeds.length === 0" class="no-results">
-        <mat-card>
+      <!-- Sin resultados -->
+      <div *ngIf="searchPerformed && !loading && searchResults.length === 0" class="no-results">
+        <mat-card class="no-results-card">
           <mat-card-content>
             <div class="no-results-content">
-              <i class="material-icons">search_off</i>
-              <h3>No se encontraron resultados</h3>
-              <p>No hay razas que coincidan con "{{searchTerm}}". Intenta con otros términos de búsqueda.</p>
+              <mat-icon class="large-icon">search_off</mat-icon>
+              <h2>Sin resultados</h2>
+              <p>No se encontraron razas que coincidan con: <strong>"{{lastSearchTerm}}"</strong></p>
+              <p class="suggestion">Intenta con otros términos como:</p>
+              <div class="suggestions">
+                <button mat-stroked-button (click)="suggestedSearch('persian')" class="suggestion-btn">Persian</button>
+                <button mat-stroked-button (click)="suggestedSearch('siamese')" class="suggestion-btn">Siamese</button>
+                <button mat-stroked-button (click)="suggestedSearch('maine')" class="suggestion-btn">Maine</button>
+                <button mat-stroked-button (click)="suggestedSearch('active')" class="suggestion-btn">Active</button>
+              </div>
             </div>
           </mat-card-content>
         </mat-card>
       </div>
 
-      <div *ngIf="!loading && !searchPerformed" class="initial-state">
-        <mat-card>
+      <!-- Error state -->
+      <div *ngIf="errorMessage" class="error-container">
+        <mat-card class="error-card">
           <mat-card-content>
-            <div class="initial-content">
-              <i class="material-icons">info</i>
-              <h3>Buscar Razas de Gatos</h3>
-              <p>Utiliza el campo de búsqueda para encontrar razas por nombre, origen o temperamento.</p>
+            <div class="error-content">
+              <mat-icon class="large-icon error">error</mat-icon>
+              <h2>Error en la búsqueda</h2>
+              <p>{{errorMessage}}</p>
+              <button mat-raised-button color="primary" (click)="retrySearch()">
+                <mat-icon>refresh</mat-icon>
+                Intentar de nuevo
+              </button>
             </div>
           </mat-card-content>
         </mat-card>
       </div>
-      
     </div>
   `,
   styles: [`
     .search-container {
+      padding: 20px;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 20px;
     }
 
     h1 {
       text-align: center;
-      color: #3f51b5;
+      color: #333;
       margin-bottom: 30px;
     }
 
@@ -180,8 +225,8 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
 
     .search-form {
       display: flex;
-      gap: 15px;
-      align-items: flex-end;
+      gap: 12px;
+      align-items: end;
       flex-wrap: wrap;
     }
 
@@ -191,114 +236,145 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
     }
 
     .search-button, .clear-button {
-      height: 56px;
-    }
-
-    .loading-container {
+      height: 48px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      padding: 40px;
+      gap: 8px;
     }
 
+    .search-button[disabled] {
+      opacity: 0.7;
+    }
+
+    /* Estados informativos */
+    .no-search-state, .loading-container, .no-results, .error-container {
+      margin-top: 20px;
+    }
+
+    .info-content, .loading-content, .no-results-content, .error-content {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .large-icon {
+      font-size: 72px;
+      width: 72px;
+      height: 72px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .large-icon.error {
+      color: #f44336;
+    }
+
+    .tip {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+
+    .suggestions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .suggestion-btn {
+      margin: 4px;
+    }
+
+    /* Tabla de resultados */
     .results-container {
       margin-top: 20px;
     }
 
     .results-count {
-      font-size: 0.9em;
       color: #666;
+      font-size: 14px;
       font-weight: normal;
     }
 
     .breeds-table {
       width: 100%;
+      margin-top: 16px;
     }
 
     .breeds-table th {
-      font-weight: bold;
-      color: #3f51b5;
-    }
-
-    .breeds-table td, .breeds-table th {
-      padding: 12px 8px;
-    }
-
-    .no-results, .initial-state {
-      margin-top: 40px;
-      text-align: center;
-    }
-
-    .no-results-content, .initial-content {
-      padding: 40px;
-    }
-
-    .no-results-content i, .initial-content i {
-      font-size: 48px;
-      color: #999;
-      margin-bottom: 16px;
-    }
-
-    .no-results-content h3, .initial-content h3 {
-      margin: 16px 0;
+      background-color: #f5f5f5;
       color: #333;
+      font-weight: 600;
     }
 
-    .no-results-content p, .initial-content p {
-      color: #666;
-      margin: 0;
+    .breeds-table td {
+      padding: 12px 8px;
+      border-bottom: 1px solid #e0e0e0;
     }
 
-    .mat-column-actions {
-      width: 120px;
-      text-align: center;
+    .temperament-cell {
+      max-width: 200px;
+      font-size: 14px;
+    }
+
+    .description-cell {
+      max-width: 250px;
+      font-size: 14px;
+      line-height: 1.4;
     }
 
     .action-button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      height: 36px;
       font-size: 12px;
-      padding: 8px 12px;
+      padding: 0 12px;
     }
 
-    .action-button mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
-    }
-
+    /* Responsive design */
     @media (max-width: 768px) {
       .search-container {
         padding: 10px;
       }
-      
+
       .search-form {
         flex-direction: column;
         align-items: stretch;
       }
-      
+
       .search-field {
         min-width: auto;
       }
-      
+
       .search-button, .clear-button {
-        height: 48px;
+        width: 100%;
+        justify-content: center;
       }
 
-      .action-button {
-        font-size: 10px;
-        padding: 6px 8px;
+      .breeds-table {
+        font-size: 12px;
+      }
+
+      .temperament-cell, .description-cell {
+        max-width: 150px;
+      }
+
+      .suggestions {
+        flex-direction: column;
+        align-items: center;
       }
     }
   `]
 })
-export class BreedListTableComponent implements OnInit {
-  allBreeds: CatBreed[] = [];
-  filteredBreeds: CatBreed[] = [];
+export class BreedListTableComponent {
   searchTerm = '';
+  searchResults: CatBreed[] = [];
   loading = false;
   searchPerformed = false;
+  lastSearchTerm = '';
+  errorMessage = '';
   displayedColumns: string[] = ['name', 'origin', 'temperament', 'life_span', 'weight', 'description', 'actions'];
 
   constructor(
@@ -306,50 +382,48 @@ export class BreedListTableComponent implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit(): void {
-    this.loadAllBreeds();
-  }
-
-  private loadAllBreeds(): void {
-    this.loading = true;
-    this.catUseCase.getAllBreeds().subscribe({
-      next: (breeds) => {
-        this.allBreeds = breeds;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error cargando razas:', error);
-        this.loading = false;
-      }
-    });
-  }
-
   searchBreeds(): void {
     if (!this.searchTerm.trim()) {
-      this.filteredBreeds = [];
-      this.searchPerformed = false;
       return;
     }
 
     this.loading = true;
     this.searchPerformed = true;
+    this.lastSearchTerm = this.searchTerm.trim();
+    this.errorMessage = '';
     
-    // Simulate search delay for better UX
-    setTimeout(() => {
-      const term = this.searchTerm.toLowerCase().trim();
-      this.filteredBreeds = this.allBreeds.filter(breed => 
-        breed.name.toLowerCase().includes(term) ||
-        breed.origin.toLowerCase().includes(term) ||
-        breed.temperament.toLowerCase().includes(term)
-      );
-      this.loading = false;
-    }, 500);
+    this.catUseCase.searchBreeds(this.searchTerm.trim()).subscribe({
+      next: (breeds) => {
+        this.searchResults = breeds;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error buscando razas:', error);
+        this.loading = false;
+        this.errorMessage = 'Hubo un problema al buscar las razas. Por favor, intenta de nuevo.';
+        this.searchResults = [];
+      }
+    });
   }
 
   clearSearch(): void {
     this.searchTerm = '';
-    this.filteredBreeds = [];
+    this.searchResults = [];
     this.searchPerformed = false;
+    this.lastSearchTerm = '';
+    this.errorMessage = '';
+  }
+
+  suggestedSearch(term: string): void {
+    this.searchTerm = term;
+    this.searchBreeds();
+  }
+
+  retrySearch(): void {
+    if (this.lastSearchTerm) {
+      this.searchTerm = this.lastSearchTerm;
+      this.searchBreeds();
+    }
   }
 
   viewBreed(breed: CatBreed): void {
