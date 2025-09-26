@@ -17,9 +17,9 @@ export class UserUseCase {
     return this.userRepository.login(credentials).pipe(
       tap(response => {
         const user: User = {
-          id: response.id,
-          email: response.email,
-          name: response.email // Usar email como name por defecto
+          id: response.user.id,
+          email: response.user.email,
+          name: response.user.email // Usar email como name por defecto
         };
         this.authStore.setUser(user);
         this.authStore.setToken(response.token);
@@ -31,9 +31,9 @@ export class UserUseCase {
     return this.userRepository.register(userData).pipe(
       tap(response => {
         const user: User = {
-          id: response.id,
-          email: response.email,
-          name: response.email // Usar email como name por defecto
+          id: response.user.id,
+          email: response.user.email,
+          name: response.user.email // Usar email como name por defecto
         };
         this.authStore.setUser(user);
         this.authStore.setToken(response.token);
