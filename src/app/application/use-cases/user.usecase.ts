@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
+import { Router } from '@angular/router';
 import { UserRepository } from '../../domain/abstractions/user-repository.abstract';
 import { User, LoginRequest, RegisterRequest, AuthResponse } from '../../domain/models/user.model';
 import { AuthStore } from '../state/auth.store';
@@ -10,7 +11,8 @@ import { AuthStore } from '../state/auth.store';
 export class UserUseCase {
   constructor(
     private userRepository: UserRepository,
-    private authStore: AuthStore
+    private authStore: AuthStore,
+    private router: Router
   ) {}
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
@@ -43,6 +45,7 @@ export class UserUseCase {
 
   logout(): void {
     this.authStore.clearAuth();
+    this.router.navigate(['/login']);
   }
 
   isAuthenticated(): boolean {

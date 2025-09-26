@@ -3,12 +3,14 @@ import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpInterceptorFn
 import { Observable } from 'rxjs';
 import { inject } from '@angular/core';
 import { AuthStore } from '../../application/state/auth.store';
+import { environment } from '../../../environments/environment';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authStore = inject(AuthStore);
   const token = authStore.getToken();
   
-  if (token && req.url.includes('localhost')) {
+  // Agregar token a todas las peticiones al backend
+  if (token && req.url.startsWith(environment.backendUrl)) {
     const authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
@@ -27,7 +29,8 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const token = this.authStore.getToken();
     
-    if (token && req.url.includes('localhost')) {
+    // Agregar token a todas las peticiones al backend
+    if (token && req.url.startsWith(environment.backendUrl)) {
       const authReq = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`
