@@ -79,7 +79,7 @@ import { CatCarouselComponent } from '../../components/cat-carousel.component';
         <mat-card>
           <mat-card-content>
             <p>¿Quieres ver todas las razas en una tabla con filtro de búsqueda?</p>
-            <button mat-raised-button color="primary" routerLink="/cats/breeds/table">
+            <button mat-raised-button color="primary" routerLink="/breeds/table">
               <i class="material-icons">table_view</i>
               Ver Tabla de Razas
             </button>
@@ -197,6 +197,7 @@ export class HomeComponent implements OnInit {
   breedImages: CatImage[] = [];
   loading = false;
   loadingImages = false;
+  pendingBreedId: string | null = null;
 
 
   constructor(
@@ -213,6 +214,9 @@ export class HomeComponent implements OnInit {
       if (breedId && this.breeds.length > 0) {
         this.selectedBreedId = breedId;
         this.onBreedSelected(breedId);
+      } else if (breedId && this.breeds.length === 0) {
+        // Si las razas aún no están cargadas, guardar el breedId para usarlo después
+        this.pendingBreedId = breedId;
       }
     });
   }
@@ -224,11 +228,12 @@ export class HomeComponent implements OnInit {
         this.breeds = breeds;
         this.loading = false;
         
-        // Verificar si hay un breedId en los query params después de cargar las razas
-        const breedId = this.route.snapshot.queryParams['breedId'];
+        // Verificar si hay un breedId pendiente o en los query params
+        const breedId = this.pendingBreedId || this.route.snapshot.queryParams['breedId'];
         if (breedId) {
           this.selectedBreedId = breedId;
           this.onBreedSelected(breedId);
+          this.pendingBreedId = null; // Limpiar el pendingBreedId
         }
       },
       error: (error) => {

@@ -354,7 +354,7 @@ export class BreedListTableComponent implements OnInit {
 
   viewBreed(breed: CatBreed): void {
     // Navegar a la vista de detalles de raza con el ID de la raza
-    this.router.navigate(['/cats/breeds'], { 
+    this.router.navigate(['/breeds'], { 
       queryParams: { breedId: breed.id } 
     });
   }
