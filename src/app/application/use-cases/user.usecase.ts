@@ -45,10 +45,6 @@ export class UserUseCase {
     this.authStore.clearAuth();
   }
 
-  getCurrentUser(): Observable<User> {
-    return this.userRepository.getCurrentUser();
-  }
-
   isAuthenticated(): boolean {
     return this.authStore.isAuthenticated();
   }

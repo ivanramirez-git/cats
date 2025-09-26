@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { CatUseCase } from '../../../application/use-cases/cat.usecase';
 import { CatBreed } from '../../../domain/models/cat-breed.model';
@@ -16,13 +16,13 @@ import { CatCarouselComponent } from '../../components/cat-carousel.component';
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatSelectModule,
     MatFormFieldModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    MatTableModule,
     MatButtonModule,
-    CatCarouselComponent
+    CatCarouselComponent,
   ],
   template: `
     <div class="home-container">
@@ -75,51 +75,14 @@ import { CatCarouselComponent } from '../../components/cat-carousel.component';
         <app-cat-carousel [images]="breedImages"></app-cat-carousel>
       </div>
 
-      <div *ngIf="breeds.length > 0" class="breeds-table-container">
+      <div class="navigation-section">
         <mat-card>
-          <mat-card-header>
-            <mat-card-title>Tabla de Razas de Gatos</mat-card-title>
-          </mat-card-header>
           <mat-card-content>
-            <table mat-table [dataSource]="breeds" class="breeds-table">
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef>Nombre</th>
-                <td mat-cell *matCellDef="let breed">{{breed.name}}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="origin">
-                <th mat-header-cell *matHeaderCellDef>Origen</th>
-                <td mat-cell *matCellDef="let breed">{{breed.origin}}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="temperament">
-                <th mat-header-cell *matHeaderCellDef>Temperamento</th>
-                <td mat-cell *matCellDef="let breed">{{breed.temperament | slice:0:50}}{{breed.temperament.length > 50 ? '...' : ''}}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="life_span">
-                <th mat-header-cell *matHeaderCellDef>Esperanza de Vida</th>
-                <td mat-cell *matCellDef="let breed">{{breed.life_span}} años</td>
-              </ng-container>
-
-              <ng-container matColumnDef="weight">
-                <th mat-header-cell *matHeaderCellDef>Peso</th>
-                <td mat-cell *matCellDef="let breed">{{breed.weight?.metric || 'N/A'}} kg</td>
-              </ng-container>
-
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef>Acciones</th>
-                <td mat-cell *matCellDef="let breed">
-                  <button mat-button color="primary" (click)="selectBreedFromTable(breed.id)">
-                    <i class="material-icons">visibility</i>
-                    Ver
-                  </button>
-                </td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
+            <p>¿Quieres ver todas las razas en una tabla con filtro de búsqueda?</p>
+            <button mat-raised-button color="primary" routerLink="/cats/breeds/table">
+              <i class="material-icons">table_view</i>
+              Ver Tabla de Razas
+            </button>
           </mat-card-content>
         </mat-card>
       </div>
@@ -131,6 +94,7 @@ import { CatCarouselComponent } from '../../components/cat-carousel.component';
           </mat-card-content>
         </mat-card>
       </div>
+      
     </div>
   `,
   styles: [`
@@ -176,21 +140,13 @@ import { CatCarouselComponent } from '../../components/cat-carousel.component';
       color: #3f51b5;
     }
 
-    .breeds-table-container {
+    .navigation-section {
       margin-top: 30px;
+      text-align: center;
     }
 
-    .breeds-table {
-      width: 100%;
-    }
-
-    .breeds-table th {
-      font-weight: bold;
-      color: #3f51b5;
-    }
-
-    .breeds-table td, .breeds-table th {
-      padding: 12px 8px;
+    .navigation-section button {
+      margin-top: 10px;
     }
 
     .no-data {
@@ -241,12 +197,24 @@ export class HomeComponent implements OnInit {
   breedImages: CatImage[] = [];
   loading = false;
   loadingImages = false;
-  displayedColumns: string[] = ['name', 'origin', 'temperament', 'life_span', 'weight', 'actions'];
 
-  constructor(private catUseCase: CatUseCase) {}
+
+  constructor(
+    private catUseCase: CatUseCase,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.loadBreeds();
+    
+    // Escuchar cambios en los query parameters
+    this.route.queryParams.subscribe(params => {
+      const breedId = params['breedId'];
+      if (breedId && this.breeds.length > 0) {
+        this.selectedBreedId = breedId;
+        this.onBreedSelected(breedId);
+      }
+    });
   }
 
   private loadBreeds(): void {
@@ -255,6 +223,13 @@ export class HomeComponent implements OnInit {
       next: (breeds) => {
         this.breeds = breeds;
         this.loading = false;
+        
+        // Verificar si hay un breedId en los query params después de cargar las razas
+        const breedId = this.route.snapshot.queryParams['breedId'];
+        if (breedId) {
+          this.selectedBreedId = breedId;
+          this.onBreedSelected(breedId);
+        }
       },
       error: (error) => {
         console.error('Error cargando razas:', error);
@@ -293,16 +268,5 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  selectBreedFromTable(breedId: string): void {
-    this.selectedBreedId = breedId;
-    this.onBreedSelected(breedId);
-    
-    // Scroll to breed info section
-    setTimeout(() => {
-      const breedInfoElement = document.querySelector('.breed-info');
-      if (breedInfoElement) {
-        breedInfoElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
-  }
+
 }

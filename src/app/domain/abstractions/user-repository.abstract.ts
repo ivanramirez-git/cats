@@ -4,5 +4,4 @@ import { User, LoginRequest, RegisterRequest, AuthResponse } from '../models/use
 export abstract class UserRepository {
   abstract login(credentials: LoginRequest): Observable<AuthResponse>;
   abstract register(userData: RegisterRequest): Observable<AuthResponse>;
-  abstract getCurrentUser(): Observable<User>;
 }

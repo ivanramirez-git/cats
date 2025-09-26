@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { UserUseCase } from '../../../application/use-cases/user.usecase';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -29,27 +29,11 @@ import { UserUseCase } from '../../../application/use-cases/user.usecase';
       <mat-card class="register-card">
         <mat-card-header>
           <mat-card-title>Crear Cuenta</mat-card-title>
-          <mat-card-subtitle>Únete a Cat Breeds App</mat-card-subtitle>
+          <mat-card-subtitle>Únete a Cat Explorer</mat-card-subtitle>
         </mat-card-header>
         
         <mat-card-content>
           <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="fill" class="full-width">
-              <mat-label>Nombre</mat-label>
-              <input 
-                matInput 
-                type="text" 
-                formControlName="name"
-                placeholder="Tu nombre completo">
-              <mat-icon matSuffix>person</mat-icon>
-              <mat-error *ngIf="registerForm.get('name')?.hasError('required')">
-                El nombre es requerido
-              </mat-error>
-              <mat-error *ngIf="registerForm.get('name')?.hasError('minlength')">
-                El nombre debe tener al menos 2 caracteres
-              </mat-error>
-            </mat-form-field>
-
             <mat-form-field appearance="fill" class="full-width">
               <mat-label>Email</mat-label>
               <input 
@@ -140,7 +124,7 @@ import { UserUseCase } from '../../../application/use-cases/user.usecase';
         
         <mat-card-actions class="card-actions">
           <p>¿Ya tienes cuenta? 
-            <a routerLink="/" mat-button color="primary">Inicia sesión aquí</a>
+            <a routerLink="/login" mat-button color="primary">Inicia sesión aquí</a>
           </p>
         </mat-card-actions>
       </mat-card>
@@ -151,14 +135,17 @@ import { UserUseCase } from '../../../application/use-cases/user.usecase';
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: calc(100vh - 120px);
+      min-height: 100vh;
       padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
 
     .register-card {
       width: 100%;
       max-width: 450px;
       padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-radius: 12px;
     }
 
     .full-width {
@@ -244,11 +231,10 @@ export class RegisterComponent {
 
   constructor(
     private fb: FormBuilder,
-    private userUseCase: UserUseCase,
+    private authService: AuthService,
     private router: Router
   ) {
     this.registerForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]]
@@ -272,15 +258,15 @@ export class RegisterComponent {
       this.errorMessage = '';
       this.successMessage = '';
       
-      const { confirmPassword, ...userData } = this.registerForm.value;
+      const { email, password } = this.registerForm.value;
       
-      this.userUseCase.register(userData).subscribe({
+      this.authService.register(email, password).subscribe({
         next: (response) => {
           this.loading = false;
-          this.successMessage = 'Cuenta creada exitosamente. Redirigiendo...';
+          this.successMessage = 'Cuenta creada exitosamente. Redirigiendo al login...';
           
           setTimeout(() => {
-            this.router.navigate(['/cats']);
+            this.router.navigate(['/login']);
           }, 2000);
         },
         error: (error) => {

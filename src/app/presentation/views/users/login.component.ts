@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { UserUseCase } from '../../../application/use-cases/user.usecase';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -106,14 +106,17 @@ import { UserUseCase } from '../../../application/use-cases/user.usecase';
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: calc(100vh - 120px);
+      min-height: 100vh;
       padding: 20px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
 
     .login-card {
       width: 100%;
       max-width: 400px;
       padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-radius: 12px;
     }
 
     .full-width {
@@ -184,7 +187,7 @@ export class LoginComponent {
 
   constructor(
     private fb: FormBuilder,
-    private userUseCase: UserUseCase,
+    private authService: AuthService,
     private router: Router
   ) {
     this.loginForm = this.fb.group({
@@ -198,12 +201,13 @@ export class LoginComponent {
       this.loading = true;
       this.errorMessage = '';
       
-      const credentials = this.loginForm.value;
+      const { email, password } = this.loginForm.value;
       
-      this.userUseCase.login(credentials).subscribe({
+      this.authService.login(email, password).subscribe({
         next: (response) => {
           this.loading = false;
-          this.router.navigate(['/cats']);
+          // El AuthService ya maneja la redirección y el almacenamiento
+          this.router.navigate(['/breeds']);
         },
         error: (error) => {
           this.loading = false;

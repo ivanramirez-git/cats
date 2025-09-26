@@ -6,8 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { UserUseCase } from '../../../application/use-cases/user.usecase';
-import { User } from '../../../domain/models/user.model';
+import { AuthService, User } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-profile',
@@ -39,10 +38,10 @@ import { User } from '../../../domain/models/user.model';
 
           <div *ngIf="!loading && user" class="user-info">
             <div class="info-row">
-              <mat-icon class="info-icon">person</mat-icon>
+              <mat-icon class="info-icon">fingerprint</mat-icon>
               <div class="info-content">
-                <label>Nombre:</label>
-                <span>{{user.name}}</span>
+                <label>ID:</label>
+                <span>{{user.id}}</span>
               </div>
             </div>
             
@@ -59,10 +58,30 @@ import { User } from '../../../domain/models/user.model';
             <mat-divider></mat-divider>
             
             <div class="info-row">
+              <mat-icon class="info-icon">verified_user</mat-icon>
+              <div class="info-content">
+                <label>Rol:</label>
+                <span class="role-badge">{{user.role}}</span>
+              </div>
+            </div>
+            
+            <mat-divider></mat-divider>
+            
+            <div class="info-row">
               <mat-icon class="info-icon">access_time</mat-icon>
               <div class="info-content">
                 <label>Miembro desde:</label>
                 <span>{{formatDate(user.createdAt)}}</span>
+              </div>
+            </div>
+            
+            <mat-divider></mat-divider>
+            
+            <div class="info-row">
+              <mat-icon class="info-icon">update</mat-icon>
+              <div class="info-content">
+                <label>Última actualización:</label>
+                <span>{{formatDate(user.updatedAt)}}</span>
               </div>
             </div>
           </div>
@@ -83,7 +102,7 @@ import { User } from '../../../domain/models/user.model';
             Cerrar Sesión
           </button>
           
-          <button mat-button routerLink="/cats" color="primary">
+          <button mat-button routerLink="/breeds" color="primary">
             <mat-icon>home</mat-icon>
             Ir al Inicio
           </button>
@@ -92,33 +111,29 @@ import { User } from '../../../domain/models/user.model';
       
       <mat-card class="stats-card">
         <mat-card-header>
-          <mat-card-title>Estadísticas</mat-card-title>
-          <mat-card-subtitle>Tu actividad en Cat Breeds App</mat-card-subtitle>
+          <mat-card-title>Estado de Sesión</mat-card-title>
+          <mat-card-subtitle>Información de tu autenticación</mat-card-subtitle>
         </mat-card-header>
         
         <mat-card-content>
           <div class="stats-grid">
             <div class="stat-item">
-              <mat-icon class="stat-icon">pets</mat-icon>
+              <mat-icon class="stat-icon" [class.authenticated]="isAuthenticated">
+                {{isAuthenticated ? 'verified' : 'no_accounts'}}
+              </mat-icon>
               <div class="stat-content">
-                <span class="stat-number">{{favoriteBreeds}}</span>
-                <span class="stat-label">Razas Favoritas</span>
+                <span class="stat-label">Estado</span>
+                <span class="stat-number" [class.authenticated]="isAuthenticated">
+                  {{isAuthenticated ? 'Autenticado' : 'No autenticado'}}
+                </span>
               </div>
             </div>
             
             <div class="stat-item">
-              <mat-icon class="stat-icon">visibility</mat-icon>
+              <mat-icon class="stat-icon">token</mat-icon>
               <div class="stat-content">
-                <span class="stat-number">{{viewedImages}}</span>
-                <span class="stat-label">Imágenes Vistas</span>
-              </div>
-            </div>
-            
-            <div class="stat-item">
-              <mat-icon class="stat-icon">search</mat-icon>
-              <div class="stat-content">
-                <span class="stat-number">{{searches}}</span>
-                <span class="stat-label">Búsquedas</span>
+                <span class="stat-label">Token</span>
+                <span class="stat-number">{{hasToken ? 'Válido' : 'No disponible'}}</span>
               </div>
             </div>
           </div>
@@ -141,7 +156,7 @@ import { User } from '../../../domain/models/user.model';
     }
 
     .profile-avatar {
-      background-color: #3f51b5;
+      background-color: #667eea;
       color: white;
       display: flex;
       align-items: center;
@@ -171,7 +186,7 @@ import { User } from '../../../domain/models/user.model';
     }
 
     .info-icon {
-      color: #666;
+      color: #667eea;
       flex-shrink: 0;
     }
 
@@ -193,6 +208,17 @@ import { User } from '../../../domain/models/user.model';
     .info-content span {
       font-size: 16px;
       color: #333;
+    }
+
+    .role-badge {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      width: fit-content;
     }
 
     .error-container {
@@ -225,7 +251,7 @@ import { User } from '../../../domain/models/user.model';
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 20px;
       padding: 16px 0;
     }
@@ -235,15 +261,20 @@ import { User } from '../../../domain/models/user.model';
       align-items: center;
       gap: 12px;
       padding: 16px;
-      background: #f5f5f5;
+      background: #f8fafc;
       border-radius: 8px;
+      border-left: 4px solid #667eea;
     }
 
     .stat-icon {
       font-size: 32px;
       width: 32px;
       height: 32px;
-      color: #3f51b5;
+      color: #667eea;
+    }
+
+    .stat-icon.authenticated {
+      color: #4caf50;
     }
 
     .stat-content {
@@ -251,18 +282,22 @@ import { User } from '../../../domain/models/user.model';
       flex-direction: column;
     }
 
-    .stat-number {
-      font-size: 24px;
-      font-weight: bold;
-      color: #333;
-      line-height: 1;
-    }
-
     .stat-label {
       font-size: 12px;
       color: #666;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+    }
+
+    .stat-number {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      line-height: 1.2;
+    }
+
+    .stat-number.authenticated {
+      color: #4caf50;
     }
 
     @media (max-width: 600px) {
@@ -288,12 +323,11 @@ import { User } from '../../../domain/models/user.model';
 export class ProfileComponent implements OnInit {
   user: User | null = null;
   loading = true;
-  favoriteBreeds = 12;
-  viewedImages = 156;
-  searches = 34;
+  isAuthenticated = false;
+  hasToken = false;
 
   constructor(
-    private userUseCase: UserUseCase,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -304,21 +338,16 @@ export class ProfileComponent implements OnInit {
   loadUserProfile(): void {
     this.loading = true;
     
-    this.userUseCase.getCurrentUser().subscribe({
-      next: (user) => {
-        this.user = user;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error cargando perfil:', error);
-        this.loading = false;
-      }
-    });
+    // Obtener información del usuario desde el servicio de autenticación
+    this.user = this.authService.getCurrentUser();
+    this.isAuthenticated = this.authService.isAuthenticated();
+    this.hasToken = !!this.authService.getToken();
+    
+    this.loading = false;
   }
 
   logout(): void {
-    this.userUseCase.logout();
-    this.router.navigate(['/']);
+    this.authService.logout();
   }
 
   formatDate(dateString: string | undefined): string {
@@ -328,7 +357,9 @@ export class ProfileComponent implements OnInit {
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   }
 }

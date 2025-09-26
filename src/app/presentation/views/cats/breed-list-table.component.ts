@@ -1,12 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
 import { CatUseCase } from '../../../application/use-cases/cat.usecase';
 import { CatBreed } from '../../../domain/models/cat-breed.model';
 
@@ -21,7 +23,8 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
     MatInputModule,
     MatButtonModule,
     MatCardModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatIconModule,
   ],
   template: `
     <div class="search-container">
@@ -111,6 +114,20 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
                 </td>
               </ng-container>
 
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                <td mat-cell *matCellDef="let breed">
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    (click)="viewBreed(breed)"
+                    class="action-button">
+                    <mat-icon>visibility</mat-icon>
+                    Ver Raza
+                  </button>
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
@@ -141,6 +158,7 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
           </mat-card-content>
         </mat-card>
       </div>
+      
     </div>
   `,
   styles: [`
@@ -231,6 +249,25 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
       margin: 0;
     }
 
+    .mat-column-actions {
+      width: 120px;
+      text-align: center;
+    }
+
+    .action-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+
+    .action-button mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
     @media (max-width: 768px) {
       .search-container {
         padding: 10px;
@@ -248,6 +285,11 @@ import { CatBreed } from '../../../domain/models/cat-breed.model';
       .search-button, .clear-button {
         height: 48px;
       }
+
+      .action-button {
+        font-size: 10px;
+        padding: 6px 8px;
+      }
     }
   `]
 })
@@ -257,9 +299,12 @@ export class BreedListTableComponent implements OnInit {
   searchTerm = '';
   loading = false;
   searchPerformed = false;
-  displayedColumns: string[] = ['name', 'origin', 'temperament', 'life_span', 'weight', 'description'];
+  displayedColumns: string[] = ['name', 'origin', 'temperament', 'life_span', 'weight', 'description', 'actions'];
 
-  constructor(private catUseCase: CatUseCase) {}
+  constructor(
+    private catUseCase: CatUseCase,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadAllBreeds();
@@ -305,5 +350,12 @@ export class BreedListTableComponent implements OnInit {
     this.searchTerm = '';
     this.filteredBreeds = [];
     this.searchPerformed = false;
+  }
+
+  viewBreed(breed: CatBreed): void {
+    // Navegar a la vista de detalles de raza con el ID de la raza
+    this.router.navigate(['/cats/breeds'], { 
+      queryParams: { breedId: breed.id } 
+    });
   }
 }

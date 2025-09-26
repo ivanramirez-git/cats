@@ -22,8 +22,4 @@ export class UserHttpRepository extends UserRepository {
   register(userData: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/users/register`, userData);
   }
-
-  getCurrentUser(): Observable<User> {
-    return this.http.get<User>(`${this.baseUrl}/users/profile`);
-  }
 }
