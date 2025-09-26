@@ -18,6 +18,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend');
+    // El componente App solo tiene un router-outlet, no un título visible
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });
