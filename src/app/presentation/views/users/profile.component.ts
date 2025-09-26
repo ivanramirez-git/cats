@@ -6,7 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AuthService, User } from '../../../core/services/auth.service';
+import { UserUseCase } from '../../../application/use-cases/user.usecase';
+import { User } from '../../../domain/models/user.model';
 
 @Component({
   selector: 'app-profile',
@@ -59,30 +60,10 @@ import { AuthService, User } from '../../../core/services/auth.service';
             <mat-divider></mat-divider>
             
             <div class="info-row">
-              <mat-icon class="info-icon">verified_user</mat-icon>
+              <mat-icon class="info-icon">person</mat-icon>
               <div class="info-content">
-                <label>Rol:</label>
-                <span class="role-badge">{{user.role}}</span>
-              </div>
-            </div>
-            
-            <mat-divider></mat-divider>
-            
-            <div class="info-row">
-              <mat-icon class="info-icon">access_time</mat-icon>
-              <div class="info-content">
-                <label>Miembro desde:</label>
-                <span>{{formatDate(user.createdAt)}}</span>
-              </div>
-            </div>
-            
-            <mat-divider></mat-divider>
-            
-            <div class="info-row">
-              <mat-icon class="info-icon">update</mat-icon>
-              <div class="info-content">
-                <label>Última actualización:</label>
-                <span>{{formatDate(user.updatedAt)}}</span>
+                <label>Nombre:</label>
+                <span>{{user.name}}</span>
               </div>
             </div>
           </div>
@@ -328,7 +309,7 @@ export class ProfileComponent implements OnInit {
   hasToken = false;
 
   constructor(
-    private authService: AuthService,
+    private userUseCase: UserUseCase,
     private router: Router
   ) {}
 
@@ -339,16 +320,16 @@ export class ProfileComponent implements OnInit {
   loadUserProfile(): void {
     this.loading = true;
     
-    // Obtener información del usuario desde el servicio de autenticación
-    this.user = this.authService.getCurrentUser();
-    this.isAuthenticated = this.authService.isAuthenticated();
-    this.hasToken = !!this.authService.getToken();
+    // Obtener información del usuario desde UserUseCase
+    this.user = this.userUseCase.getUser();
+    this.isAuthenticated = this.userUseCase.isAuthenticated();
+    this.hasToken = !!this.user; // Si hay usuario, hay token válido
     
     this.loading = false;
   }
 
   logout(): void {
-    this.authService.logout();
+    this.userUseCase.logout();
   }
 
   formatDate(dateString: string | undefined): string {

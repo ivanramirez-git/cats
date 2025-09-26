@@ -2,8 +2,10 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
-import { AuthService, User } from '../../core/services/auth.service';
+import { UserUseCase } from '../../application/use-cases/user.usecase';
+import { User } from '../../domain/models/user.model';
 import { Subscription } from 'rxjs';
+import { AuthStore } from '../../application/state/auth.store';
 
 @Component({
   selector: 'app-main-layout',
@@ -316,13 +318,14 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   private authSubscription?: Subscription;
 
   constructor(
-    private authService: AuthService,
+    private userUseCase: UserUseCase,
+    private authStore: AuthStore,
     private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.authSubscription = this.authService.authState$.subscribe(state => {
-      this.currentUser = state.user;
+    this.authSubscription = this.authStore.user$.subscribe(user => {
+      this.currentUser = user;
     });
   }
 
@@ -350,7 +353,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.userUseCase.logout();
     this.isMobileMenuOpen = false;
   }
 }
